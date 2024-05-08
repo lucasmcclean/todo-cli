@@ -8,15 +8,17 @@ import (
 )
 
 var (
-	Verbose bool
+	Verbose  bool
+	ListName string
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "todo",
 	Short: "Todo is a tool for managing tasks from the terminal",
 	Long: `Todo is a command line utility for generating and managing
-todo lists. It utilizes local text files which can be
-accessed and modified outside of the program.`,
+todo lists.
+A call to the root command lists the tasks from your active
+todo list unless a seperate path is specified with -l.`,
 }
 
 func Execute() {
@@ -27,6 +29,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Display more verbose output. (default false)")
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "display more verbose output")
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+
+	rootCmd.PersistentFlags().StringVarP(&ListName, "list", "l", "_current", "specifiy target list")
+	viper.BindPFlag("list", rootCmd.PersistentFlags().Lookup("list"))
 }
