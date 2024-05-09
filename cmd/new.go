@@ -12,14 +12,10 @@ var newCmd = &cobra.Command{
 	Short: "Generate a new todo list",
 	Long:  `Generates a new list that you can add tasks to.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		listName, err := cmd.Flags().GetString("list")
-		if err != nil {
-			return err
-		}
-		if listName == "_current" {
+		if ListName == "_current" {
 			return errors.New("List argument required (-l, --list), \"_current\" is not a valid list name")
 		}
-		fmt.Printf("new %s\n", listName)
+		fmt.Printf("new %s at %s\n", ListName, Directory)
 		return nil
 	},
 }

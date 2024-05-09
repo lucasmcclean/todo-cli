@@ -12,11 +12,7 @@ var addCmd = &cobra.Command{
 	Long: `Adds a task to the currently active list unless a different
 list is specified with the -l tag.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		listName, err := cmd.Flags().GetString("list")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("add %s\n", listName)
+		fmt.Printf("add %s\n", ListName)
 		return nil
 	},
 }
