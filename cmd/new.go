@@ -15,10 +15,11 @@ var newCmd = &cobra.Command{
 		if ListName == "_current" {
 			return errors.New("List argument required (-l, --list), \"_current\" is not a valid list name")
 		}
-		_, err := os.OpenFile(Directory+ListName, os.O_CREATE, 0600)
+		file, err := os.OpenFile(Directory+ListName, os.O_CREATE, 0600)
 		if err != nil {
-			return err
+			return errors.New("Could not create file " + ListName + " at " + Directory)
 		}
+		defer file.Close()
 		return nil
 	},
 }
