@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
+	"os/user"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,11 +22,6 @@ todo lists.
 A call to the root command lists the tasks from your active
 todo list unless a seperate path is specified with -l.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		listName, err := cmd.Flags().GetString("list")
-		if err != nil {
-			return err
-		}
-		fmt.Println("Printing from root", listName)
 		return nil
 	},
 }
@@ -39,11 +34,21 @@ func Execute() {
 }
 
 func init() {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	home := usr.HomeDir
+
 	dir := os.Getenv("$XDG_DATA_HOME")
 	if dir == "" {
-		dir = "$HOME/.local/share"
+		dir = "/.local/share"
 	}
-	dir += "/todo-lists"
+	dir += "/todo/"
+	dir = home + dir
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.MkdirAll(dir, 0600)
+	}
 
 	rootCmd.PersistentFlags().StringVarP(&Directory, "directory", "d", dir, "specify directory to store lists")
 	viper.BindPFlag("directory", rootCmd.PersistentFlags().Lookup("directory"))

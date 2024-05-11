@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +15,10 @@ var newCmd = &cobra.Command{
 		if ListName == "_current" {
 			return errors.New("List argument required (-l, --list), \"_current\" is not a valid list name")
 		}
-		fmt.Printf("new %s at %s\n", ListName, Directory)
+		_, err := os.OpenFile(Directory+ListName, os.O_CREATE, 0600)
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }
