@@ -13,6 +13,8 @@ import (
 var (
 	Verbose   bool
 	Directory string
+
+	menu *utils.Menu
 )
 
 var rootCmd = &cobra.Command{
@@ -22,8 +24,10 @@ var rootCmd = &cobra.Command{
 todo lists.
 A call to the root command lists the tasks from your active
 todo list unless a seperate path is specified with -l.`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return drawTodo()
+		menu = utils.NewMenu(Directory + args[0])
+		return runInteractiveTodo()
 	},
 }
 
@@ -44,26 +48,43 @@ func init() {
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 }
 
-func drawTodo() error {
-	restore, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		return err
-	}
-	defer term.Restore(int(os.Stdin.Fd()), restore)
-
-	in := make([]byte, 1)
+func runInteractiveTodo() error {
+DrawLoop:
 	for {
-		_, err := os.Stdin.Read(in)
+		menu.Draw()
+		inputCode, err := handleInput()
 		if err != nil {
-			return err
+			panic(err)
 		}
-		if in[0] == 113 {
-			break
+		switch inputCode {
+		case 113:
+			break DrawLoop
+		case 107:
+			menu.MoveCursor(-1)
+		case 106:
+			menu.MoveCursor(1)
+		case 183:
+			menu.MoveCursor(-1)
+		case 184:
+			menu.MoveCursor(1)
+		default:
+			break DrawLoop
 		}
 	}
 	return nil
 }
 
-func renderTodo() {
+func handleInput() (inputCode byte, err error) {
+	restore, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return 1, err
+	}
+	defer term.Restore(int(os.Stdin.Fd()), restore)
 
+	input := make([]byte, 1)
+	_, err = os.Stdin.Read(input)
+	if err != nil {
+		return 1, err
+	}
+	return input[0], nil
 }
