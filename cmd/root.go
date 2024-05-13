@@ -27,6 +27,7 @@ todo list unless a seperate path is specified with -l.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		menu = utils.NewMenu(Directory + args[0])
+		defer menu.Close()
 		return runInteractiveTodo()
 	},
 }
@@ -67,6 +68,8 @@ DrawLoop:
 			menu.MoveCursor(-1)
 		case 184:
 			menu.MoveCursor(1)
+		case 13:
+			menu.CompleteItem()
 		default:
 			break DrawLoop
 		}

@@ -8,9 +8,10 @@ import (
 )
 
 type Menu struct {
-	File      os.File
-	CursorPos int
+	file      os.File
+	cursorPos int
 	items     []*MenuItem
+	completed []int
 }
 
 type MenuItem struct {
@@ -28,8 +29,10 @@ func NewMenu(fileLocation string) *Menu {
 	}
 
 	newMenu := &Menu{}
-	newMenu.File = *file
-	newMenu.CursorPos = 0
+	newMenu.file = *file
+	newMenu.cursorPos = 0
+	newMenu.items = make([]*MenuItem, 0, 20)
+	newMenu.completed = make([]int, 0, 20)
 
 	scanner := bufio.NewScanner(file)
 	i := 0
@@ -44,28 +47,36 @@ func NewMenu(fileLocation string) *Menu {
 
 func (m *Menu) Draw() {
 	fmt.Printf("\033[H\033[J")
-	i := 0
-	for ; i < m.CursorPos; i++ {
-		fmt.Println("   [ ] " + m.items[i].text)
-	}
-	fmt.Printf(" > [ ] "+"\033[1m%s\033[0m\n", m.items[i].text)
-	for i += 1; i < len(m.items); i++ {
-		fmt.Println("   [ ] " + m.items[i].text)
+	for i := 0; i < len(m.items); i++ {
+		completed := IncludesInt(m.completed, i)
+		if i == m.cursorPos && completed {
+			fmt.Printf(" > [X] "+"\033[1m%s\033[0m\n", m.items[i].text)
+		} else if i == m.cursorPos {
+			fmt.Printf(" > [ ] "+"\033[1m%s\033[0m\n", m.items[i].text)
+		} else if completed {
+			fmt.Println("   [X] " + m.items[i].text)
+		} else {
+			fmt.Println("   [ ] " + m.items[i].text)
+		}
 	}
 }
 
 func (m *Menu) MoveCursor(delta int) {
-	m.CursorPos += delta
-	for m.CursorPos > len(m.items)-1 {
-		m.CursorPos -= len(m.items)
+	m.cursorPos += delta
+	for m.cursorPos > len(m.items)-1 {
+		m.cursorPos -= len(m.items)
 	}
-	for m.CursorPos < 0 {
-		m.CursorPos += len(m.items)
+	for m.cursorPos < 0 {
+		m.cursorPos += len(m.items)
 	}
 }
 
+func (m *Menu) CompleteItem() {
+	m.completed = append(m.completed, m.cursorPos)
+}
+
 func (m *Menu) Close() error {
-	err := m.File.Close()
+	err := m.file.Close()
 	if err != nil {
 		return err
 	}
