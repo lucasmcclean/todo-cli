@@ -45,8 +45,11 @@ func NewMenu(fileLocation string) *Menu {
 	return newMenu
 }
 
-func (m *Menu) Draw() {
-	fmt.Printf("\033[H\033[J")
+func (m *Menu) Draw(offset int) {
+	if offset < 0 {
+		offset = -offset
+	}
+	fmt.Printf("\033[%d;H\033[J", offset)
 	for i := 0; i < len(m.items); i++ {
 		completed := IncludesInt(m.completed, i)
 		if i == m.cursorPos && completed {
@@ -62,6 +65,10 @@ func (m *Menu) Draw() {
 }
 
 func (m *Menu) MoveCursor(delta int) {
+	if len(m.items) == 0 {
+		m.cursorPos = 0
+		return
+	}
 	m.cursorPos += delta
 	for m.cursorPos > len(m.items)-1 {
 		m.cursorPos -= len(m.items)
@@ -71,8 +78,17 @@ func (m *Menu) MoveCursor(delta int) {
 	}
 }
 
-func (m *Menu) CompleteItem() {
-	m.completed = append(m.completed, m.cursorPos)
+func (m *Menu) CompleteItem(remove bool) {
+	if remove {
+		if len(m.items) <= 1 {
+			m.items = m.items[:0]
+		} else {
+			m.items = append(m.items[:m.cursorPos], m.items[m.cursorPos+1:]...)
+		}
+		m.MoveCursor(0)
+	} else {
+		m.completed = append(m.completed, m.cursorPos)
+	}
 }
 
 func (m *Menu) Close() error {

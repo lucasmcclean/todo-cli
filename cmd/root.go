@@ -14,7 +14,9 @@ var (
 	Verbose   bool
 	Directory string
 
-	menu *utils.Menu
+	offset int
+	remove bool
+	menu   *utils.Menu
 )
 
 var rootCmd = &cobra.Command{
@@ -42,6 +44,11 @@ func Execute() {
 func init() {
 	dir := utils.MustGetDataDir()
 
+	rootCmd.Flags().IntVarP(&offset, "offset", "o", 1, "number of lines to keep free above list")
+	viper.BindPFlag("offset", rootCmd.Flags().Lookup("offset"))
+
+	rootCmd.Flags().BoolVarP(&remove, "remove", "r", false, "remove items that are checked")
+
 	rootCmd.PersistentFlags().StringVarP(&Directory, "directory", "d", dir, "specify directory to store lists")
 	viper.BindPFlag("directory", rootCmd.PersistentFlags().Lookup("directory"))
 
@@ -52,7 +59,7 @@ func init() {
 func runInteractiveTodo() error {
 DrawLoop:
 	for {
-		menu.Draw()
+		menu.Draw(offset)
 		inputCode, err := handleInput()
 		if err != nil {
 			panic(err)
@@ -60,18 +67,12 @@ DrawLoop:
 		switch inputCode {
 		case 113:
 			break DrawLoop
-		case 107:
+		case 107, 183:
 			menu.MoveCursor(-1)
-		case 106:
-			menu.MoveCursor(1)
-		case 183:
-			menu.MoveCursor(-1)
-		case 184:
+		case 106, 184:
 			menu.MoveCursor(1)
 		case 13:
-			menu.CompleteItem()
-		default:
-			break DrawLoop
+			menu.CompleteItem(remove)
 		}
 	}
 	return nil
