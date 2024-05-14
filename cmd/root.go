@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	utils "github.com/ljmcclean/todo-cli/pkg"
@@ -65,14 +66,19 @@ DrawLoop:
 			panic(err)
 		}
 		switch inputCode {
-		case 113:
+		case utils.Q:
 			break DrawLoop
-		case 107, 183:
+		case utils.J, utils.Da:
 			menu.MoveCursor(-1)
-		case 106, 184:
+		case utils.K, utils.Ua:
 			menu.MoveCursor(1)
-		case 13:
+		case utils.En:
 			menu.CompleteItem(remove)
+		case utils.X:
+			menu.CompleteItem(true)
+		default:
+			fmt.Println(inputCode)
+			return nil
 		}
 	}
 	return nil

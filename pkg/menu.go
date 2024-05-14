@@ -51,12 +51,12 @@ func (m *Menu) Draw(offset int) {
 	}
 	fmt.Printf("\033[%d;H\033[J", offset)
 	for i := 0; i < len(m.items); i++ {
-		completed := IncludesInt(m.completed, i)
-		if i == m.cursorPos && completed {
+		isCompleted := IncludesInt(m.completed, i)
+		if i == m.cursorPos && isCompleted {
 			fmt.Printf(" > [X] "+"\033[1m%s\033[0m\n", m.items[i].text)
 		} else if i == m.cursorPos {
 			fmt.Printf(" > [ ] "+"\033[1m%s\033[0m\n", m.items[i].text)
-		} else if completed {
+		} else if isCompleted {
 			fmt.Println("   [X] " + m.items[i].text)
 		} else {
 			fmt.Println("   [ ] " + m.items[i].text)
@@ -80,6 +80,7 @@ func (m *Menu) MoveCursor(delta int) {
 
 func (m *Menu) CompleteItem(remove bool) {
 	if remove {
+		RemoveInt(&m.completed, m.cursorPos)
 		if len(m.items) <= 1 {
 			m.items = m.items[:0]
 		} else {

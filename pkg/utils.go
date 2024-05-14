@@ -32,3 +32,13 @@ func IncludesInt(arr []int, x int) bool {
 	}
 	return false
 }
+
+func RemoveInt(arr *[]int, x int) bool {
+	for i := 0; i < len(*arr); i++ {
+		if (*arr)[i] == x {
+			*arr = append((*arr)[:i], (*arr)[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
