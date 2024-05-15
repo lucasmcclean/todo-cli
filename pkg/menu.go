@@ -11,11 +11,18 @@ type Menu struct {
 	file      os.File
 	cursorPos int
 	items     []*MenuItem
-	completed []int
+	undoStack []*MenuItemHist
 }
 
 type MenuItem struct {
-	text string
+	text      string
+	completed bool
+}
+
+type MenuItemHist struct {
+	menuItem  *MenuItem
+	pos       int
+	operation string
 }
 
 var file *os.File
@@ -31,7 +38,6 @@ func NewMenu(fileLocation string) *Menu {
 	newMenu.file = *file
 	newMenu.cursorPos = 0
 	newMenu.items = make([]*MenuItem, 0, 20)
-	newMenu.completed = make([]int, 0, 20)
 
 	scanner := bufio.NewScanner(file)
 	i := 0
@@ -51,12 +57,11 @@ func (m *Menu) Draw(offset int) {
 	fmt.Printf("\033[%d;H\033[J", offset)
 	fmt.Println("  j: down, k: up, x: remove, enter: check,\n  i: new item before, a: new item after\n--------------------")
 	for i := 0; i < len(m.items); i++ {
-		isCompleted := IncludesInt(m.completed, i)
-		if i == m.cursorPos && isCompleted {
+		if i == m.cursorPos && m.items[i].completed {
 			fmt.Printf(" > [X] "+"\033[1m%s\033[0m\n", m.items[i].text)
 		} else if i == m.cursorPos {
 			fmt.Printf(" > [ ] "+"\033[1m%s\033[0m\n", m.items[i].text)
-		} else if isCompleted {
+		} else if m.items[i].completed {
 			fmt.Println("   [X] " + m.items[i].text)
 		} else {
 			fmt.Println("   [ ] " + m.items[i].text)
@@ -81,7 +86,7 @@ func (m *Menu) MoveCursor(delta int) {
 
 func (m *Menu) CompleteItem(remove bool) {
 	if remove {
-		RemoveInt(&m.completed, m.cursorPos)
+		m.postAction(m.cursorPos, m.items[m.cursorPos], "DEL")
 		if len(m.items) <= 1 {
 			m.items = m.items[:0]
 			return
@@ -89,11 +94,7 @@ func (m *Menu) CompleteItem(remove bool) {
 		m.items = append(m.items[:m.cursorPos], m.items[m.cursorPos+1:]...)
 		m.MoveCursor(0)
 	} else {
-		if IncludesInt(m.completed, m.cursorPos) {
-			RemoveInt(&m.completed, m.cursorPos)
-			return
-		}
-		m.completed = append(m.completed, m.cursorPos)
+		m.items[m.cursorPos].completed = true
 	}
 }
 
@@ -106,15 +107,10 @@ func (m *Menu) AddItem(rPos int, text string) {
 		m.items = append(m.items, newItem)
 		return
 	}
-	// TODO: Cleaner solution?
 	remainder := []*MenuItem{newItem}
 	remainder = append(remainder, m.items[m.cursorPos+rPos:]...)
 	m.items = append(m.items[:m.cursorPos+rPos], remainder...)
-	for i := 0; i < len(m.completed); i++ {
-		if m.completed[i] > m.cursorPos+rPos-1 {
-			m.completed[i] += 1
-		}
-	}
+	m.postAction(m.cursorPos+rPos, newItem, "ADD")
 }
 
 func (m *Menu) Close() error {
@@ -136,4 +132,26 @@ func GetInput() string {
 	fmt.Print("New item: ")
 	scanner.Scan()
 	return scanner.Text()
+}
+
+func (m *Menu) postAction(pos int, item *MenuItem, op string) {
+	hist := &MenuItemHist{
+		menuItem:  item,
+		pos:       pos,
+		operation: op,
+	}
+	m.undoStack = append(m.undoStack, hist)
+}
+
+func (m *Menu) UndoAction() {
+	var action *MenuItemHist
+	action, m.undoStack = m.undoStack[len(m.undoStack)-1], m.undoStack[:len(m.undoStack)-1]
+	switch action.operation {
+	case "DEL":
+		slice := []*MenuItem{action.menuItem}
+		slice = append(slice, m.items[action.pos:]...)
+		m.items = append(m.items[:action.pos], slice...)
+	case "ADD":
+		m.items = append(m.items[:action.pos], m.items[action.pos+1:]...)
+	}
 }

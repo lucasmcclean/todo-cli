@@ -81,6 +81,8 @@ DrawLoop:
 		case utils.I:
 			input := utils.GetInput()
 			menu.AddItem(0, input)
+		case utils.U:
+			menu.UndoAction()
 		}
 	}
 	return nil
