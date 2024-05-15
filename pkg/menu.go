@@ -16,7 +16,6 @@ type Menu struct {
 
 type MenuItem struct {
 	text string
-	pos  int
 }
 
 var file *os.File
@@ -37,7 +36,7 @@ func NewMenu(fileLocation string) *Menu {
 	scanner := bufio.NewScanner(file)
 	i := 0
 	for scanner.Scan() {
-		item := newMenuItem(scanner.Text(), i)
+		item := newMenuItem(scanner.Text())
 		newMenu.items = append(newMenu.items, item)
 		i++
 	}
@@ -50,6 +49,7 @@ func (m *Menu) Draw(offset int) {
 		offset = -offset
 	}
 	fmt.Printf("\033[%d;H\033[J", offset)
+	fmt.Println("  j: down, k: up, x: remove, enter: check,\n  i: new item before, a: new item after\n--------------------")
 	for i := 0; i < len(m.items); i++ {
 		isCompleted := IncludesInt(m.completed, i)
 		if i == m.cursorPos && isCompleted {
@@ -62,6 +62,7 @@ func (m *Menu) Draw(offset int) {
 			fmt.Println("   [ ] " + m.items[i].text)
 		}
 	}
+	fmt.Println("--------------------\n  'q' to quit")
 }
 
 func (m *Menu) MoveCursor(delta int) {
@@ -83,12 +84,36 @@ func (m *Menu) CompleteItem(remove bool) {
 		RemoveInt(&m.completed, m.cursorPos)
 		if len(m.items) <= 1 {
 			m.items = m.items[:0]
-		} else {
-			m.items = append(m.items[:m.cursorPos], m.items[m.cursorPos+1:]...)
+			return
 		}
+		m.items = append(m.items[:m.cursorPos], m.items[m.cursorPos+1:]...)
 		m.MoveCursor(0)
 	} else {
+		if IncludesInt(m.completed, m.cursorPos) {
+			RemoveInt(&m.completed, m.cursorPos)
+			return
+		}
 		m.completed = append(m.completed, m.cursorPos)
+	}
+}
+
+func (m *Menu) AddItem(rPos int, text string) {
+	if text == "" {
+		return
+	}
+	newItem := newMenuItem(text)
+	if len(m.items) == 0 {
+		m.items = append(m.items, newItem)
+		return
+	}
+	// TODO: Cleaner solution?
+	remainder := []*MenuItem{newItem}
+	remainder = append(remainder, m.items[m.cursorPos+rPos:]...)
+	m.items = append(m.items[:m.cursorPos+rPos], remainder...)
+	for i := 0; i < len(m.completed); i++ {
+		if m.completed[i] > m.cursorPos+rPos-1 {
+			m.completed[i] += 1
+		}
 	}
 }
 
@@ -100,9 +125,15 @@ func (m *Menu) Close() error {
 	return nil
 }
 
-func newMenuItem(text string, pos int) *MenuItem {
+func newMenuItem(text string) *MenuItem {
 	return &MenuItem{
 		text: text,
-		pos:  pos,
 	}
+}
+
+func GetInput() string {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("New item: ")
+	scanner.Scan()
+	return scanner.Text()
 }

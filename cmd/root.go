@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	utils "github.com/ljmcclean/todo-cli/pkg"
@@ -76,9 +75,12 @@ DrawLoop:
 			menu.CompleteItem(remove)
 		case utils.X:
 			menu.CompleteItem(true)
-		default:
-			fmt.Println(inputCode)
-			return nil
+		case utils.A:
+			input := utils.GetInput()
+			menu.AddItem(1, input)
+		case utils.I:
+			input := utils.GetInput()
+			menu.AddItem(0, input)
 		}
 	}
 	return nil
