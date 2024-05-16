@@ -76,13 +76,13 @@ DrawLoop:
 		case utils.X:
 			menu.CompleteItem(true)
 		case utils.A:
-			input := utils.GetInput()
-			menu.AddItem(1, input)
+			menu.AddItem(1)
 		case utils.I:
-			input := utils.GetInput()
-			menu.AddItem(0, input)
+			menu.AddItem(0)
 		case utils.U:
 			menu.UndoAction()
+		case utils.M:
+			menu.MoveItem()
 		}
 	}
 	return nil

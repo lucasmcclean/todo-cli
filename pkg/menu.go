@@ -12,6 +12,7 @@ type Menu struct {
 	cursorPos int
 	items     []*MenuItem
 	undoStack []*MenuItemHist
+	limbo     *MenuItem
 }
 
 type MenuItem struct {
@@ -98,11 +99,16 @@ func (m *Menu) CompleteItem(remove bool) {
 	}
 }
 
-func (m *Menu) AddItem(rPos int, text string) {
-	if text == "" {
+func (m *Menu) AddItem(rPos int) {
+	if m.limbo != nil {
+		m.placeItem(rPos)
 		return
 	}
-	newItem := newMenuItem(text)
+	input := GetInput()
+	if input == "" {
+		return
+	}
+	newItem := newMenuItem(input)
 	if len(m.items) == 0 {
 		m.items = append(m.items, newItem)
 		return
@@ -111,6 +117,22 @@ func (m *Menu) AddItem(rPos int, text string) {
 	remainder = append(remainder, m.items[m.cursorPos+rPos:]...)
 	m.items = append(m.items[:m.cursorPos+rPos], remainder...)
 	m.postAction(m.cursorPos+rPos, newItem, "ADD")
+}
+
+func (m *Menu) MoveItem() {
+	if m.limbo != nil {
+		return
+	}
+	m.limbo = m.items[m.cursorPos]
+	m.items = append(m.items[:m.cursorPos], m.items[m.cursorPos+1:]...)
+}
+
+func (m *Menu) placeItem(rPos int) {
+	slice := []*MenuItem{m.limbo}
+	slice = append(slice, m.items[m.cursorPos+rPos:]...)
+	m.items = append(m.items[:m.cursorPos+rPos], slice...)
+	m.postAction(m.cursorPos, m.limbo, "MOV")
+	m.limbo = nil
 }
 
 func (m *Menu) Close() error {
@@ -152,6 +174,8 @@ func (m *Menu) UndoAction() {
 		slice = append(slice, m.items[action.pos:]...)
 		m.items = append(m.items[:action.pos], slice...)
 	case "ADD":
+		m.items = append(m.items[:action.pos], m.items[action.pos+1:]...)
+	case "MOV":
 		m.items = append(m.items[:action.pos], m.items[action.pos+1:]...)
 	}
 }
