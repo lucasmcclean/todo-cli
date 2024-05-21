@@ -23,6 +23,15 @@ func GetFileNames() (fileNames []string, err error) {
 	return fileNames, nil
 }
 
+func RemoveDataFile(fileName string) error {
+	dataDir, err := getDataDir()
+	if err != nil {
+		return err
+	}
+	err = os.Remove(dataDir + fileName)
+	return err
+}
+
 func getDataDir() (dataDir string, err error) {
 	usr, err := user.Current()
 	if err != nil {

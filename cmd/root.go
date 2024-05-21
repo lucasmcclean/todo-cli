@@ -9,8 +9,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "todo",
-	Short: " Todo is a tool for managing tasks from the terminal",
-	Long:  ` Todo is a command line utility for generating and managing todo lists.`,
+	Short: "Todo is a tool for managing tasks from the terminal",
+	Long:  `Todo is a command line utility for generating and managing todo lists.`,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return nil
