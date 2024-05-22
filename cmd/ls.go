@@ -13,7 +13,7 @@ var lsCmd = &cobra.Command{
 	Long: `Accesses all files stored in the data directory for this todo
 app (typically located in $HOME/.local/share/todo/) and prints them.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fileNames, err := menu.GetFileNames()
+		fileNames, err := menu.GetDataFileNames()
 		if err != nil {
 			return nil
 		}

@@ -5,7 +5,7 @@ import (
 	"os/user"
 )
 
-func GetFileNames() (fileNames []string, err error) {
+func GetDataFileNames() (fileNames []string, err error) {
 	dataDir, err := getDataDir()
 	if err != nil {
 		return nil, err
@@ -30,6 +30,22 @@ func RemoveDataFile(fileName string) error {
 	}
 	err = os.Remove(dataDir + fileName)
 	return err
+}
+
+func OpenDataFile(fileName string, create bool) (file *os.File, err error) {
+	dataDir, err := getDataDir()
+	if err != nil {
+		return nil, err
+	}
+	if create {
+		file, err = os.OpenFile(dataDir+fileName, os.O_CREATE|os.O_RDWR, 0600)
+	} else {
+		file, err = os.OpenFile(dataDir+fileName, os.O_RDWR, 0600)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
 }
 
 func getDataDir() (dataDir string, err error) {
