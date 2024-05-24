@@ -38,12 +38,15 @@ func (m *Menu) PrintItems() {
 		if err != nil {
 			break
 		}
+		if len(line) <= 1 {
+			continue
+		}
 		if lineNum == m.cursorPos {
 			fmt.Print(" > ")
 		} else {
 			fmt.Print("   ")
 		}
-		if line[:5] == "[!-!]" {
+		if len(line) >= 5 && line[:5] == "[!-!]" {
 			fmt.Print("[X] ")
 			line = line[5:]
 		} else {

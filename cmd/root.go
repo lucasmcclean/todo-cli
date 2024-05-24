@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ljmcclean/todo-cli/menu"
 	"github.com/spf13/cobra"
+)
+
+var (
+	interactive bool
+	list        string
+	create      bool
 )
 
 var rootCmd = &cobra.Command{
@@ -13,6 +20,15 @@ var rootCmd = &cobra.Command{
 	Long:  `Todo is a command line utility for generating and managing todo lists.`,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		m, err := menu.New(list, create)
+		if err != nil {
+			return err
+		}
+		if interactive {
+			m.RunInteractive()
+		} else {
+			m.PrintItems()
+		}
 		return nil
 	},
 }
@@ -26,5 +42,7 @@ func Execute() {
 }
 
 func init() {
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.todo-cli.yaml)")
+	rootCmd.Flags().StringVarP(&list, "list", "l", "", "specifiy list to display")
+	rootCmd.Flags().BoolVarP(&create, "create", "c", false, "create list if it does not exist")
+	rootCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "make list interactive")
 }
