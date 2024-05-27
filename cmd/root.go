@@ -20,6 +20,9 @@ var rootCmd = &cobra.Command{
 	Long:  `Todo is a command line utility for generating and managing todo lists.`,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if list == "" {
+			return fmt.Errorf("You must specifiy a list with the -l flag")
+		}
 		m, err := menu.New(list, create)
 		if err != nil {
 			return err
