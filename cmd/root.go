@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 		if interactive {
 			m.RunInteractive()
 		} else {
-			m.PrintItems()
+			m.PrintItems(false)
 		}
 		return nil
 	},

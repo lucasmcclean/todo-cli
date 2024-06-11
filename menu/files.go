@@ -1,6 +1,8 @@
 package menu
 
 import (
+	"bufio"
+	"io"
 	"os"
 	"os/user"
 )
@@ -46,6 +48,20 @@ func OpenDataFile(fileName string, create bool) (file *os.File, err error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+func GetFileLength(file os.File) (numTasks int) {
+	file.Seek(0, io.SeekStart)
+	reader := bufio.NewReader(&file)
+	numTasks = 0
+	for {
+		_, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		numTasks++
+	}
+	return numTasks
 }
 
 func getDataDir() (dataDir string, err error) {

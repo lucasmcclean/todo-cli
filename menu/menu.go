@@ -3,6 +3,7 @@ package menu
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -28,9 +29,38 @@ func New(fileName string, create bool) (menu *Menu, err error) {
 type action struct {
 	op      string
 	lineNum int
+	task    string
 }
 
-func (m *Menu) PrintItems() {
+func (m *Menu) pushAction(op string, lineNum int, task string) {
+	action := action{
+		op:      op,
+		lineNum: lineNum,
+		task:    task,
+	}
+	m.history = append(m.history, action)
+}
+
+func (m *Menu) popAction() (action action) {
+	action = m.history[len(m.history)-1]
+	m.history = append(m.history, m.history[:len(m.history)-1]...)
+	return action
+}
+
+func (m *Menu) MoveCursor(delta int) {
+	m.pushAction("MOV", m.cursorPos, "")
+	m.cursorPos += delta
+	fileLen := GetFileLength(*m.file)
+	for m.cursorPos < 0 {
+		m.cursorPos += fileLen
+	}
+	for m.cursorPos >= fileLen {
+		m.cursorPos -= fileLen
+	}
+}
+
+func (m *Menu) PrintItems(isInteractive bool) {
+	m.file.Seek(0, io.SeekStart)
 	reader := bufio.NewReader(m.file)
 	lineNum := 0
 	for {
@@ -38,13 +68,10 @@ func (m *Menu) PrintItems() {
 		if err != nil {
 			break
 		}
-		if len(line) <= 1 {
-			continue
-		}
-		if lineNum == m.cursorPos {
+		if lineNum == m.cursorPos && isInteractive {
 			fmt.Print(" > ")
 		} else {
-			fmt.Print("   ")
+			fmt.Printf(" %d ", lineNum+1)
 		}
 		if len(line) >= 5 && line[:5] == "[!-!]" {
 			fmt.Print("[X] ")
@@ -54,5 +81,8 @@ func (m *Menu) PrintItems() {
 		}
 		fmt.Print(line)
 		lineNum++
+	}
+	if isInteractive {
+		fmt.Println("Press 'h' for help")
 	}
 }
