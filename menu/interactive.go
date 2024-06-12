@@ -24,9 +24,12 @@ const (
 )
 
 func (m *Menu) RunInteractive() (err error) {
+	helpMenu := drawHelp()
 Interactive:
 	for {
-		m.PrintItems(true)
+		taskList := m.DrawMenu(true)
+		clearScreen()
+		fmt.Print(taskList)
 		inputCode, err := getRawInput()
 		if err != nil {
 			return err
@@ -39,13 +42,15 @@ Interactive:
 		case Up, UpA:
 			m.MoveCursor(-1)
 		case Mark:
+			m.MarkItem()
 		case Del:
 		case After:
 		case Insert:
 		case Undo:
 		case Make:
 		case Help:
-			printHelp()
+			clearScreen()
+			fmt.Print(helpMenu)
 			inputCode, err = getRawInput()
 			if err != nil {
 				return err
@@ -59,6 +64,11 @@ Interactive:
 		}
 	}
 	return nil
+}
+
+func clearScreen() {
+	fmt.Print("\033[H")
+	fmt.Print("\033[2J")
 }
 
 func getRawInput() (inputCode byte, err error) {
@@ -76,8 +86,8 @@ func getRawInput() (inputCode byte, err error) {
 	return input[0], nil
 }
 
-func printHelp() {
-	fmt.Printf(""+
+func drawHelp() (output string) {
+	output = fmt.Sprintf(""+
 		"Quit this session         '%s' or 'Ctrl-c'\n"+
 		"Move cursor down          'Up' or '%s'\n"+
 		"Move cursor up            'Down'  or '%s'\n"+
@@ -93,4 +103,5 @@ func printHelp() {
 		string(Quit), string(Down), string(Up),
 		string(Del), string(After), string(Insert),
 		string(Make), string(Undo), string(Help))
+	return output
 }

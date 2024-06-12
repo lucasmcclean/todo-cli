@@ -11,6 +11,7 @@ type Menu struct {
 	file      *os.File
 	cursorPos int
 	history   []action
+	rw        bufio.ReadWriter
 }
 
 func New(fileName string, create bool) (menu *Menu, err error) {
@@ -22,6 +23,7 @@ func New(fileName string, create bool) (menu *Menu, err error) {
 		file:      file,
 		cursorPos: 0,
 		history:   make([]action, 20),
+		rw:        *bufio.NewReadWriter(bufio.NewReader(file), bufio.NewWriter(file)),
 	}
 	return menu, nil
 }
@@ -32,7 +34,7 @@ type action struct {
 	task    string
 }
 
-func (m *Menu) pushAction(op string, lineNum int, task string) {
+func (m *Menu) newAction(op string, lineNum int, task string) {
 	action := action{
 		op:      op,
 		lineNum: lineNum,
@@ -41,14 +43,14 @@ func (m *Menu) pushAction(op string, lineNum int, task string) {
 	m.history = append(m.history, action)
 }
 
-func (m *Menu) popAction() (action action) {
+func (m *Menu) undoAction() (action action) {
 	action = m.history[len(m.history)-1]
 	m.history = append(m.history, m.history[:len(m.history)-1]...)
 	return action
 }
 
 func (m *Menu) MoveCursor(delta int) {
-	m.pushAction("MOV", m.cursorPos, "")
+	m.newAction("MOV", m.cursorPos, "")
 	m.cursorPos += delta
 	fileLen := GetFileLength(*m.file)
 	for m.cursorPos < 0 {
@@ -59,30 +61,54 @@ func (m *Menu) MoveCursor(delta int) {
 	}
 }
 
-func (m *Menu) PrintItems(isInteractive bool) {
+func (m *Menu) DrawMenu(isInteractive bool) (output string) {
 	m.file.Seek(0, io.SeekStart)
-	reader := bufio.NewReader(m.file)
 	lineNum := 0
 	for {
-		line, err := reader.ReadString('\n')
+		line, err := m.rw.ReadString('\n')
 		if err != nil {
 			break
 		}
 		if lineNum == m.cursorPos && isInteractive {
-			fmt.Print(" > ")
+			output += "-> "
 		} else {
-			fmt.Printf(" %d ", lineNum+1)
+			output += fmt.Sprintf(" %d ", lineNum+1)
 		}
 		if len(line) >= 5 && line[:5] == "[!-!]" {
-			fmt.Print("[X] ")
+			output += "[X] "
 			line = line[5:]
 		} else {
-			fmt.Print("[ ] ")
+			output += "[ ] "
 		}
-		fmt.Print(line)
+		output += line
 		lineNum++
 	}
 	if isInteractive {
-		fmt.Println("Press 'h' for help")
+		output += "Press 'h' for help\n"
 	}
+	return output
+}
+
+func (m *Menu) MarkItem() {
+	m.file.Seek(0, io.SeekStart)
+	curLine := 0
+	for {
+		line, err := m.rw.ReadString('\n')
+		if err != nil {
+			break
+		}
+		if curLine == m.cursorPos {
+			if len(line) >= 5 && line[:5] == "[!-!]" {
+				m.rw.WriteString(line[5:])
+			} else {
+				m.rw.WriteString("[!-!]" + line)
+			}
+		} else {
+			m.rw.WriteString(line)
+		}
+		curLine++
+	}
+	m.file.Truncate(0)
+	m.file.Seek(0, io.SeekStart)
+	m.rw.Flush()
 }
