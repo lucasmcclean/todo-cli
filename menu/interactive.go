@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -18,7 +19,7 @@ const (
 	Mark   byte = 13
 	After  byte = 97
 	Insert byte = 105
-	Make   byte = 109
+	Move   byte = 109
 	Undo   byte = 117
 	Help   byte = 104
 )
@@ -44,10 +45,21 @@ Interactive:
 		case Mark:
 			m.MarkItem()
 		case Del:
+			m.DeleteItem()
 		case After:
+			usrIn, err := promptItem()
+			if err != nil {
+				return err
+			}
+			m.CreateItem(1, usrIn)
 		case Insert:
+			usrIn, err := promptItem()
+			if err != nil {
+				return err
+			}
+			m.CreateItem(0, usrIn)
 		case Undo:
-		case Make:
+		case Move:
 		case Help:
 			clearScreen()
 			fmt.Print(helpMenu)
@@ -95,13 +107,24 @@ func drawHelp() (output string) {
 		"Mark task complete        'Enter'\n"+
 		"Insert task after cursor  '%s'\n"+
 		"Insert task before cursor '%s'\n"+
-		"Create a new task         '%s'\n"+
+		"Move the current task     '%s'\n"+
 		"Undo the last action      '%s'\n"+
 		"Open help menu            '%s'\n"+
 		"-----------------------------------------\n"+
+		"Inserting before ('i') and after ('a') creates a new item"+
 		"Hit 'q' to exit this help menu\n",
 		string(Quit), string(Down), string(Up),
 		string(Del), string(After), string(Insert),
-		string(Make), string(Undo), string(Help))
+		string(Move), string(Undo), string(Help))
 	return output
+}
+
+func promptItem() (userInput string, err error) {
+	inputReader := bufio.NewReader(os.Stdin)
+	fmt.Print("New item: ")
+	userInput, err = inputReader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return userInput, nil
 }

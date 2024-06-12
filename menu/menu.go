@@ -61,6 +61,49 @@ func (m *Menu) MoveCursor(delta int) {
 	}
 }
 
+func (m *Menu) DeleteItem() {
+	m.file.Seek(0, io.SeekStart)
+	curLine := 0
+	var deletedItem string
+	for {
+		line, err := m.rw.ReadString('\n')
+		if err != nil {
+			break
+		}
+		if curLine == m.cursorPos {
+			deletedItem = line
+			curLine++
+			continue
+		}
+		m.rw.WriteString(line)
+		curLine++
+	}
+	m.file.Truncate(0)
+	m.file.Seek(0, io.SeekStart)
+	m.rw.Flush()
+	m.newAction("DEL", m.cursorPos, deletedItem)
+}
+
+func (m *Menu) CreateItem(offset int, content string) {
+	m.file.Seek(0, io.SeekStart)
+	curLine := 0
+	for {
+		line, err := m.rw.ReadString('\n')
+		if err != nil {
+			break
+		}
+		if curLine == m.cursorPos+offset {
+			m.rw.WriteString(content)
+		}
+		m.rw.WriteString(line)
+		curLine++
+	}
+	m.file.Truncate(0)
+	m.file.Seek(0, io.SeekStart)
+	m.rw.Flush()
+	m.newAction("NEW", m.cursorPos, "")
+}
+
 func (m *Menu) DrawMenu(isInteractive bool) (output string) {
 	m.file.Seek(0, io.SeekStart)
 	lineNum := 0
@@ -111,4 +154,5 @@ func (m *Menu) MarkItem() {
 	m.file.Truncate(0)
 	m.file.Seek(0, io.SeekStart)
 	m.rw.Flush()
+	m.newAction("MARK", m.cursorPos, "")
 }
