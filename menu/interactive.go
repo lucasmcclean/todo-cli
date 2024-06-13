@@ -26,11 +26,16 @@ const (
 
 func (m *Menu) RunInteractive() (err error) {
 	helpMenu := drawHelp()
+	isMoving := false
+	oldPos := 0
 Interactive:
 	for {
 		taskList := m.DrawMenu(true)
 		clearScreen()
 		fmt.Print(taskList)
+		if isMoving {
+			fmt.Println("Moving item...\nPress 'a' to place after selected item or 'i' to place before\nPress'q' to cancel")
+		}
 		inputCode, err := getRawInput()
 		if err != nil {
 			return err
@@ -43,23 +48,35 @@ Interactive:
 		case Up, UpA:
 			m.MoveCursor(-1)
 		case Mark:
-			m.MarkItem()
+			m.MarkItem(m.cursorPos)
 		case Del:
-			m.DeleteItem()
+			m.DeleteItem(m.cursorPos)
 		case After:
-			usrIn, err := promptItem()
-			if err != nil {
-				return err
+			if isMoving {
+				m.MoveItem(oldPos, m.cursorPos+1)
+				isMoving = false
+			} else {
+				usrIn, err := promptItem()
+				if err != nil {
+					return err
+				}
+				m.CreateItem(m.cursorPos+1, usrIn)
 			}
-			m.CreateItem(1, usrIn)
 		case Insert:
-			usrIn, err := promptItem()
-			if err != nil {
-				return err
+			if isMoving {
+				m.MoveItem(oldPos, m.cursorPos)
+				isMoving = false
+			} else {
+				usrIn, err := promptItem()
+				if err != nil {
+					return err
+				}
+				m.CreateItem(m.cursorPos, usrIn)
 			}
-			m.CreateItem(0, usrIn)
 		case Undo:
 		case Move:
+			isMoving = true
+			oldPos = m.cursorPos
 		case Help:
 			clearScreen()
 			fmt.Print(helpMenu)
