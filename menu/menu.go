@@ -142,7 +142,7 @@ func (m *Menu) MarkItem(pos int, undo bool) {
 		if err != nil {
 			break
 		}
-		if curLine == m.cursorPos {
+		if curLine == pos {
 			if len(line) >= 5 && line[:5] == "[!-!]" {
 				m.rw.WriteString(line[5:])
 			} else {
