@@ -119,8 +119,8 @@ func getRawInput() (inputCode byte, err error) {
 func drawHelp() (output string) {
 	output = fmt.Sprintf(""+
 		"Quit this session         '%s' or 'Ctrl-c'\n"+
-		"Move cursor down          'Up' or '%s'\n"+
-		"Move cursor up            'Down'  or '%s'\n"+
+		"Move cursor down          'Down' or '%s'\n"+
+		"Move cursor up            'Up'  or '%s'\n"+
 		"Delete current task       '%s'\n"+
 		"Mark task complete        'Enter'\n"+
 		"Insert task after cursor  '%s'\n"+
@@ -129,7 +129,7 @@ func drawHelp() (output string) {
 		"Undo the last action      '%s'\n"+
 		"Open help menu            '%s'\n"+
 		"-----------------------------------------\n"+
-		"Inserting before ('i') and after ('a') creates a new item"+
+		"Inserting before ('i') and after ('a') creates a new item\n"+
 		"Hit 'q' to exit this help menu\n",
 		string(Quit), string(Down), string(Up),
 		string(Del), string(After), string(Insert),

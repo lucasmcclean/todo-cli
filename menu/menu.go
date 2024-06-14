@@ -111,9 +111,13 @@ func (m *Menu) DrawMenu(isInteractive bool) (output string) {
 			break
 		}
 		if lineNum == m.cursorPos && isInteractive {
-			output += "-> "
+			output += " -> "
 		} else {
-			output += fmt.Sprintf(" %d ", lineNum+1)
+			if lineNum < 9 {
+				output += fmt.Sprintf("  %d ", lineNum+1)
+			} else {
+				output += fmt.Sprintf(" %d ", lineNum+1)
+			}
 		}
 		if len(line) >= 5 && line[:5] == "[!-!]" {
 			output += "[X] "
