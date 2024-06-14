@@ -48,32 +48,33 @@ Interactive:
 		case Up, UpA:
 			m.MoveCursor(-1)
 		case Mark:
-			m.MarkItem(m.cursorPos)
+			m.MarkItem(m.cursorPos, false)
 		case Del:
-			m.DeleteItem(m.cursorPos)
+			m.DeleteItem(m.cursorPos, false)
 		case After:
 			if isMoving {
-				m.MoveItem(oldPos, m.cursorPos+1)
+				m.MoveItem(oldPos, m.cursorPos+1, false)
 				isMoving = false
 			} else {
 				usrIn, err := promptItem()
 				if err != nil {
 					return err
 				}
-				m.CreateItem(m.cursorPos+1, usrIn)
+				m.CreateItem(m.cursorPos+1, usrIn, false)
 			}
 		case Insert:
 			if isMoving {
-				m.MoveItem(oldPos, m.cursorPos)
+				m.MoveItem(oldPos, m.cursorPos, false)
 				isMoving = false
 			} else {
 				usrIn, err := promptItem()
 				if err != nil {
 					return err
 				}
-				m.CreateItem(m.cursorPos, usrIn)
+				m.CreateItem(m.cursorPos, usrIn, false)
 			}
 		case Undo:
+			m.Undo()
 		case Move:
 			isMoving = true
 			oldPos = m.cursorPos

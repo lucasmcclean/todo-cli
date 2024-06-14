@@ -22,7 +22,7 @@ func New(fileName string, create bool) (menu *Menu, err error) {
 	menu = &Menu{
 		file:      file,
 		cursorPos: 0,
-		history:   make([]action, 20),
+		history:   []action{},
 		rw:        *bufio.NewReadWriter(bufio.NewReader(file), bufio.NewWriter(file)),
 	}
 	return menu, nil
@@ -41,12 +41,6 @@ func (m *Menu) newAction(op string, undo func()) {
 	m.history = append(m.history, action)
 }
 
-func (m *Menu) undoAction() (action action) {
-	action = m.history[len(m.history)-1]
-	m.history = append(m.history, m.history[:len(m.history)-1]...)
-	return action
-}
-
 func (m *Menu) MoveCursor(delta int) {
 	m.cursorPos += delta
 	fileLen := GetFileLength(*m.file)
@@ -58,7 +52,7 @@ func (m *Menu) MoveCursor(delta int) {
 	}
 }
 
-func (m *Menu) DeleteItem(pos int) {
+func (m *Menu) DeleteItem(pos int, undo bool) {
 	m.file.Seek(0, io.SeekStart)
 	curLine := 0
 	var deletedItem string
@@ -78,10 +72,12 @@ func (m *Menu) DeleteItem(pos int) {
 	m.file.Truncate(0)
 	m.file.Seek(0, io.SeekStart)
 	m.rw.Flush()
-	m.newAction("DEL", func() { m.CreateItem(m.cursorPos, deletedItem) })
+	if !undo && curLine != 0 {
+		m.newAction("DEL", func() { m.CreateItem(pos, deletedItem, true) })
+	}
 }
 
-func (m *Menu) CreateItem(pos int, content string) {
+func (m *Menu) CreateItem(pos int, content string, undo bool) {
 	m.file.Seek(0, io.SeekStart)
 	curLine := 0
 	for {
@@ -95,10 +91,15 @@ func (m *Menu) CreateItem(pos int, content string) {
 		m.rw.WriteString(line)
 		curLine++
 	}
+	if curLine <= pos {
+		m.rw.WriteString(content)
+	}
 	m.file.Truncate(0)
 	m.file.Seek(0, io.SeekStart)
 	m.rw.Flush()
-	m.newAction("NEW", func() { m.DeleteItem(pos) })
+	if !undo {
+		m.newAction("NEW", func() { m.DeleteItem(pos, true) })
+	}
 }
 
 func (m *Menu) DrawMenu(isInteractive bool) (output string) {
@@ -129,7 +130,7 @@ func (m *Menu) DrawMenu(isInteractive bool) (output string) {
 	return output
 }
 
-func (m *Menu) MarkItem(pos int) {
+func (m *Menu) MarkItem(pos int, undo bool) {
 	m.file.Seek(0, io.SeekStart)
 	curLine := 0
 	for {
@@ -151,35 +152,56 @@ func (m *Menu) MarkItem(pos int) {
 	m.file.Truncate(0)
 	m.file.Seek(0, io.SeekStart)
 	m.rw.Flush()
-	m.newAction("MARK", func() { m.MarkItem(pos) })
+	if !undo {
+		m.newAction("MARK", func() { m.MarkItem(pos, true) })
+	}
 }
 
-func (m *Menu) MoveItem(oldPos int, newPos int) {
+func (m *Menu) MoveItem(oldPos int, newPos int, undo bool) {
 	m.file.Seek(0, io.SeekStart)
 	curLine := 0
-	var before, after, old string
+	var numBefore int
+	var before, moved, after string
 	for {
 		line, err := m.rw.ReadString('\n')
 		if err != nil {
 			break
 		}
 		if curLine == oldPos {
-			old = line
+			moved = line
 		} else if curLine < newPos {
 			before += line
+			numBefore++
 		} else if curLine >= newPos {
 			after += line
 		}
 		curLine++
 	}
-	m.rw.WriteString(before + old + after)
+	m.rw.WriteString(before + moved + after)
 	m.file.Truncate(0)
 	m.file.Seek(0, io.SeekStart)
 	m.rw.Flush()
-	m.newAction("MOV", func() { m.MoveItem(newPos, oldPos) })
+	if !undo {
+		if newPos < oldPos {
+			oldPos++
+		}
+		m.newAction("MOV", func() { m.MoveItem(numBefore, oldPos, true) })
+	}
 }
 
 func (m *Menu) Undo() {
-	action := m.undoAction()
+	action, err := m.undoAction()
+	if err != nil {
+		return
+	}
 	action.undo()
+}
+
+func (m *Menu) undoAction() (act action, err error) {
+	if len(m.history) == 0 {
+		return act, fmt.Errorf("There is nothing to undo")
+	}
+	act = m.history[len(m.history)-1]
+	m.history = m.history[:len(m.history)-1]
+	return act, nil
 }
